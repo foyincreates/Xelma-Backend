@@ -26,6 +26,7 @@ jest.mock("../services/soroban.service", () => ({
   default: { placeBet: jest.fn().mockResolvedValue(undefined) },
 }));
 
+import { PredictionService as _PS } from "../services/prediction.service";
 import { prisma } from "../lib/prisma";
 
 // Named references obtained after import — same jest.fn() instances as in the factory
@@ -124,11 +125,6 @@ describe("PredictionService (Issue #78)", () => {
           status: "ACTIVE",
         });
         mockPredictionFindUnique.mockResolvedValue(null);
-        mockUserFindUnique.mockResolvedValue({
-          id: userId,
-          walletAddress: "GXXX",
-          virtualBalance: 1000,
-        });
 
         await expect(
           predictionService.submitPrediction(userId, roundId, 100)
@@ -143,11 +139,6 @@ describe("PredictionService (Issue #78)", () => {
           priceRanges: [{ min: 1, max: 2, pool: 0 }],
         });
         mockPredictionFindUnique.mockResolvedValue(null);
-        mockUserFindUnique.mockResolvedValue({
-          id: userId,
-          walletAddress: "GXXX",
-          virtualBalance: 1000,
-        });
 
         await expect(
           predictionService.submitPrediction(userId, roundId, 100, undefined)
@@ -162,11 +153,6 @@ describe("PredictionService (Issue #78)", () => {
           priceRanges: [{ min: 1, max: 2, pool: 0 }],
         });
         mockPredictionFindUnique.mockResolvedValue(null);
-        mockUserFindUnique.mockResolvedValue({
-          id: userId,
-          walletAddress: "GXXX",
-          virtualBalance: 1000,
-        });
 
         await expect(
           predictionService.submitPrediction(userId, roundId, 100, undefined, {
@@ -199,7 +185,7 @@ describe("PredictionService (Issue #78)", () => {
           createdAt: new Date(),
         };
         mockPredictionCreate.mockResolvedValue(created);
-        mockUserUpdate.mockResolvedValue({});
+        mockUserUpdate.mockResolvedValue({ id: userId, walletAddress: "GXXX", virtualBalance: 900 });
         mockRoundUpdate.mockResolvedValue({});
 
         const result = await predictionService.submitPrediction(
@@ -218,12 +204,11 @@ describe("PredictionService (Issue #78)", () => {
             side: "UP",
           },
         });
-        expect(mockUserUpdate).toHaveBeenCalledWith(
-          expect.objectContaining({
-            where: expect.objectContaining({ id: userId }),
-            data: { virtualBalance: { decrement: 100 } },
-          })
-        );
+        // Service uses an atomic WHERE+DECREMENT pattern to prevent race conditions
+        expect(mockUserUpdate).toHaveBeenCalledWith({
+          where: { id: userId, virtualBalance: { gte: 100 } },
+          data: { virtualBalance: { decrement: 100 } },
+        });
         expect(mockRoundUpdate).toHaveBeenCalledWith({
           where: { id: roundId },
           data: { poolUp: { increment: 100 } },
@@ -258,7 +243,7 @@ describe("PredictionService (Issue #78)", () => {
           createdAt: new Date(),
         };
         mockPredictionCreate.mockResolvedValue(created);
-        mockUserUpdate.mockResolvedValue({});
+        mockUserUpdate.mockResolvedValue({ id: userId, walletAddress: "GXXX", virtualBalance: 450 });
         mockRoundUpdate.mockResolvedValue({});
 
         const result = await predictionService.submitPrediction(

@@ -20,8 +20,11 @@ import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './docs/openapi';
 import { initializeSocket } from './socket';
 import { prisma } from './lib/prisma';
+import path from 'path';
 
-dotenv.config();
+const envFile = process.env.NODE_ENV === 'test' ? '.env.test' : '.env';
+dotenv.config({ path: path.resolve(process.cwd(), envFile), override: false });
+dotenv.config({ override: false });
 
 
 const validateEnv = (): void => {

@@ -110,6 +110,7 @@ describe("Auth Routes & JWT Guards (Issue #78)", () => {
   });
 
   beforeEach(() => {
+    jest.clearAllMocks();
     mockIsValidStellarAddress.mockReturnValue(true);
     mockVerifySignature.mockResolvedValue(true);
     mockUserFindUnique.mockImplementation((args: any) => {
@@ -118,6 +119,17 @@ describe("Auth Routes & JWT Guards (Issue #78)", () => {
         return Promise.resolve({ id: testUser.id, walletAddress: testUser.walletAddress, role: "USER" });
       return Promise.resolve(null);
     });
+    mockAuthChallengeDeleteMany.mockResolvedValue({ count: 0 });
+    mockAuthChallengeUpdateMany.mockResolvedValue({ count: 1 });
+    mockAuthChallengeCreate.mockImplementation((args: any) =>
+      Promise.resolve({
+        id: "ch-1",
+        challenge: args?.data?.challenge ?? "xelma_auth_123",
+        walletAddress: args?.data?.walletAddress,
+        expiresAt: args?.data?.expiresAt ?? new Date(Date.now() + 5 * 60 * 1000),
+        isUsed: false,
+      })
+    );
   });
 
   afterAll(async () => {
@@ -278,7 +290,6 @@ describe("Auth Routes & JWT Guards (Issue #78)", () => {
       };
       mockUserCreate.mockResolvedValueOnce(newUser);
       mockTransactionCreate.mockResolvedValueOnce({});
-      mockAuthChallengeUpdate.mockResolvedValueOnce({});
       mockAuthChallengeDeleteMany.mockResolvedValueOnce({ count: 0 });
 
       const res = await request(app)
