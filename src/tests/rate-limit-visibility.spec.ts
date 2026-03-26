@@ -1,7 +1,7 @@
 import request from 'supertest';
 import { createApp } from '../index';
 import { prisma } from '../lib/prisma';
-import { signToken } from '../utils/jwt.util';
+import { generateToken } from '../utils/jwt.util';
 import { UserRole } from '@prisma/client';
 import { rateLimitMetricsService } from '../services/rate-limit-metrics.service';
 
@@ -25,7 +25,7 @@ describe('Rate Limit Visibility', () => {
         nickname: 'Admin',
       },
     });
-    adminToken = signToken({ userId: adminUser.id, walletAddress: adminUser.walletAddress });
+    adminToken = generateToken(adminUser.id, adminUser.walletAddress);
 
     // Create a mock regular user
     regularUser = await prisma.user.upsert({
@@ -37,8 +37,9 @@ describe('Rate Limit Visibility', () => {
         nickname: 'User',
       },
     });
-    userToken = signToken({ userId: regularUser.id, walletAddress: regularUser.walletAddress });
+    userToken = generateToken(regularUser.id, regularUser.walletAddress);
   });
+
 
   afterAll(async () => {
     await prisma.rateLimitMetric.deleteMany();
