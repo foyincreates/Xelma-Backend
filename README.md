@@ -400,6 +400,15 @@ CLIENT_URL=http://localhost:5173
 # Database
 DATABASE_URL=postgresql://username:password@localhost:5432/xelma_db
 
+# Prisma / Postgres pool + timeout tuning (optional)
+# If set, these values override/augment DATABASE_URL query params at startup.
+# Defaults are production-safe and conservative.
+DB_CONNECTION_LIMIT=10
+DB_POOL_TIMEOUT_SECONDS=10
+DB_CONNECT_TIMEOUT_SECONDS=10
+DB_STATEMENT_TIMEOUT_MS=0
+DB_PGBOUNCER=false
+
 # JWT Authentication
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 JWT_EXPIRY=7d
@@ -423,6 +432,23 @@ SOROBAN_ORACLE_SECRET=S...your-oracle-secret-key
 ROUND_SCHEDULER_ENABLED=false  # Set to 'true' to enable automated rounds
 ROUND_SCHEDULER_MODE=UP_DOWN   # or 'LEGENDS'
 ```
+
+#### Database pool/timeout tuning
+
+Prisma’s Postgres connector reads pool/timeouts via connection string query params. This backend exposes operational knobs as env vars and merges them into `DATABASE_URL` at startup (env vars win over existing query params):
+
+| Variable | Purpose | Default |
+| --- | --- | --- |
+| `DB_CONNECTION_LIMIT` | Max Prisma DB connections | `10` |
+| `DB_POOL_TIMEOUT_SECONDS` | Wait for a pooled connection | `10` |
+| `DB_CONNECT_TIMEOUT_SECONDS` | Timeout establishing a new connection | `10` |
+| `DB_STATEMENT_TIMEOUT_MS` | Server-side statement timeout (`0` disables) | `0` |
+| `DB_PGBOUNCER` | Enable PgBouncer transaction-pooling mode | `false` |
+
+**Notes**
+- **PgBouncer**: if your stack uses PgBouncer in *transaction pooling* mode, set `DB_PGBOUNCER=true`.
+- **Visibility**: scrape `/metrics` and look for `db_pool_settings_info` to see the effective values.
+- **Validation**: invalid values are rejected at startup via config validation.
 
 ### 3. Set Up Database
 

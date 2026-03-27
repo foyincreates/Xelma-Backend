@@ -7,6 +7,7 @@ import {
   Gauge,
 } from 'prom-client';
 import { connectionRegistry } from '../socket';
+import config from '../config';
 
 export const metricsRegistry = new Registry();
 
@@ -76,6 +77,35 @@ export const priceOracleUpdatesTotal = new Counter({
   name: 'price_oracle_updates_total',
   help: 'Total number of price oracle updates fetched',
   registers: [metricsRegistry],
+});
+
+// ---------------------------------------------------------------------------
+// DB / Prisma pool settings (low-cardinality)
+// ---------------------------------------------------------------------------
+
+export const dbPoolSettingsInfo = new Gauge({
+  name: 'db_pool_settings_info',
+  help: 'Effective DB pool/timeout settings (labels), value is always 1',
+  labelNames: [
+    'connection_limit',
+    'pool_timeout_seconds',
+    'connect_timeout_seconds',
+    'statement_timeout_ms',
+    'pgbouncer',
+  ] as const,
+  registers: [metricsRegistry],
+  collect() {
+    this.set(
+      {
+        connection_limit: String(config.database.connectionLimit),
+        pool_timeout_seconds: String(config.database.poolTimeoutSeconds),
+        connect_timeout_seconds: String(config.database.connectTimeoutSeconds),
+        statement_timeout_ms: String(config.database.statementTimeoutMs),
+        pgbouncer: String(config.database.pgbouncer),
+      },
+      1,
+    );
+  },
 });
 
 // ---------------------------------------------------------------------------

@@ -21,6 +21,11 @@ export interface JwtConfig {
 
 export interface DatabaseConfig {
   url: string;
+  connectionLimit: number;
+  poolTimeoutSeconds: number;
+  connectTimeoutSeconds: number;
+  statementTimeoutMs: number;
+  pgbouncer: boolean;
 }
 
 export interface SorobanConfig {
@@ -88,7 +93,54 @@ function buildConfig(): Config {
 
   const database: DatabaseConfig = {
     url: v.required(env.DATABASE_URL, "DATABASE_URL"),
+    connectionLimit: v.positiveInt(env.DB_CONNECTION_LIMIT, "DB_CONNECTION_LIMIT", 10),
+    poolTimeoutSeconds: v.positiveInt(
+      env.DB_POOL_TIMEOUT_SECONDS,
+      "DB_POOL_TIMEOUT_SECONDS",
+      10,
+    ),
+    connectTimeoutSeconds: v.positiveInt(
+      env.DB_CONNECT_TIMEOUT_SECONDS,
+      "DB_CONNECT_TIMEOUT_SECONDS",
+      10,
+    ),
+    statementTimeoutMs: v.nonNegativeInt(
+      env.DB_STATEMENT_TIMEOUT_MS,
+      "DB_STATEMENT_TIMEOUT_MS",
+      0,
+      { max: 60 * 60 * 1000 },
+    ),
+    pgbouncer: v.boolean(env.DB_PGBOUNCER, false),
   };
+
+  // Merge pool/timeout settings into the connection string as Prisma/pg expects.
+  // If DATABASE_URL already includes any of these params, explicit env vars win.
+  try {
+    const url = new URL(database.url);
+
+    const setParam = (key: string, value: string) => {
+      url.searchParams.set(key, value);
+    };
+
+    setParam("connection_limit", String(database.connectionLimit));
+    setParam("pool_timeout", String(database.poolTimeoutSeconds));
+    setParam("connect_timeout", String(database.connectTimeoutSeconds));
+    if (database.statementTimeoutMs > 0) {
+      setParam("statement_timeout", String(database.statementTimeoutMs));
+    } else {
+      url.searchParams.delete("statement_timeout");
+    }
+    if (database.pgbouncer) {
+      setParam("pgbouncer", "true");
+    } else {
+      url.searchParams.delete("pgbouncer");
+    }
+
+    database.url = url.toString();
+  } catch {
+    // Keep existing validator behavior: DATABASE_URL required but not strongly URL-validated here.
+    // Prisma will surface a clear error if the URL is malformed.
+  }
 
   const sorobanNetwork = v.oneOf(
     env.SOROBAN_NETWORK,
@@ -156,8 +208,15 @@ try {
   _config = buildConfig();
 } catch (err) {
   if (err instanceof ConfigValidationError) {
-    console.error(`\n${err.message}\n`);
-    process.exit(1);
+    // In normal runtime we fail fast and exit the process.
+    // In Jest/test environments we throw so tests can assert on the failure.
+    const isTestEnv =
+      process.env.NODE_ENV === "test" || Boolean(process.env.JEST_WORKER_ID);
+    if (!isTestEnv) {
+      console.error(`\n${err.message}\n`);
+      process.exit(1);
+    }
+    throw err;
   }
   throw err;
 }

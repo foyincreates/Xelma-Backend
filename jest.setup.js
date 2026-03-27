@@ -10,3 +10,9 @@ dotenv.config({ override: false });
 if (!process.env.JWT_SECRET) {
   process.env.JWT_SECRET = 'test-jwt-secret';
 }
+
+// Ensure DATABASE_URL is set so src/config/index.ts validation passes in unit tests
+// that mock Prisma and do not require a real database.
+if (!process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = 'postgresql://test_user:test_pass@localhost:5432/test_db?schema=public';
+}

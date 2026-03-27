@@ -85,7 +85,10 @@ const FAKE_TIMER_OPTIONS: Parameters<typeof jest.useFakeTimers>[0] = {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("SchedulerService", () => {
+const shouldRunDbTests = process.env.RUN_DB_TESTS === "true" || process.env.CI === "true";
+const describeDb = shouldRunDbTests ? describe : describe.skip;
+
+describeDb("SchedulerService", () => {
   afterAll(async () => {
     await prisma.$disconnect();
   });
