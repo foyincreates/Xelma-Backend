@@ -10,6 +10,30 @@ export class ConfigValidationError extends Error {
 class ConfigValidator {
   private errors: string[] = [];
 
+  nonNegativeInt(
+    value: string | undefined,
+    name: string,
+    fallback: number,
+    opts?: { min?: number; max?: number },
+  ): number {
+    const raw = value?.trim();
+    if (!raw) return fallback;
+    const parsed = parseInt(raw, 10);
+    if (isNaN(parsed) || parsed < 0) {
+      this.errors.push(`${name} must be a non-negative integer, got "${raw}"`);
+      return fallback;
+    }
+    if (opts?.min !== undefined && parsed < opts.min) {
+      this.errors.push(`${name} must be >= ${opts.min}, got "${raw}"`);
+      return fallback;
+    }
+    if (opts?.max !== undefined && parsed > opts.max) {
+      this.errors.push(`${name} must be <= ${opts.max}, got "${raw}"`);
+      return fallback;
+    }
+    return parsed;
+  }
+
   required(value: string | undefined, name: string): string {
     if (!value || value.trim().length === 0) {
       this.errors.push(`${name} is required but not set`);

@@ -4,6 +4,8 @@ import predictionService from '../services/prediction.service';
 import sorobanService from '../services/soroban.service';
 import { toDecimal } from '../utils/decimal.util';
 
+const shouldRunDbTests = process.env.RUN_DB_TESTS === 'true' || process.env.CI === 'true';
+
 // Mock soroban service - we use jest.mock to replace the module with a mock object
 jest.mock('../services/soroban.service', () => {
     return {
@@ -15,7 +17,9 @@ jest.mock('../services/soroban.service', () => {
     };
 });
 
-describe('Prediction Service - Transactional & Concurrency Tests', () => {
+const describeDb = shouldRunDbTests ? describe : describe.skip;
+
+describeDb('Prediction Service - Transactional & Concurrency Tests', () => {
     let user: any;
     let testRound: any;
 

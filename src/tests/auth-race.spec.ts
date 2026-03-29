@@ -24,7 +24,10 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-describe('Auth Race Condition Prevention', () => {
+const shouldRunDbTests = process.env.RUN_DB_TESTS === 'true' || process.env.CI === 'true';
+const describeDb = shouldRunDbTests ? describe : describe.skip;
+
+describeDb('Auth Race Condition Prevention', () => {
     let app: Express;
     const keypair = StellarSdk.Keypair.random();
     const walletAddress = keypair.publicKey();
