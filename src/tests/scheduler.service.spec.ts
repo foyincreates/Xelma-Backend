@@ -35,6 +35,21 @@ import {
   afterAll,
   jest,
 } from "@jest/globals";
+jest.mock("../lib/prisma", () => ({
+  __esModule: true,
+  prisma: {
+    round: {
+      findMany: jest.fn(),
+      create: jest.fn(),
+      deleteMany: jest.fn(),
+    },
+    notification: {
+      deleteMany: jest.fn(),
+    },
+    $disconnect: jest.fn(),
+  },
+}));
+
 import { prisma } from "../lib/prisma";
 import schedulerService from "../services/scheduler.service";
 import resolutionService from "../services/resolution.service";

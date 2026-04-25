@@ -77,7 +77,7 @@ describe('Round Management', () => {
   describe('POST /api/rounds/start', () => {
     it('should allow admin to start a new UP_DOWN round', async () => {
       const res = await request(app)
-        .post('/api/round/start')
+        .post('/api/rounds/start')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           mode: 0, // UP_DOWN
@@ -92,7 +92,7 @@ describe('Round Management', () => {
 
     it('should allow admin to start a new LEGENDS round', async () => {
       const res = await request(app)
-        .post('/api/round/start')
+        .post('/api/rounds/start')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           mode: 1, // LEGENDS
@@ -107,7 +107,7 @@ describe('Round Management', () => {
 
     it('should block non-admin from starting a round', async () => {
       const res = await request(app)
-        .post('/api/round/start')
+        .post('/api/rounds/start')
         .set('Authorization', `Bearer ${userAToken}`)
         .send({
           mode: 0,
