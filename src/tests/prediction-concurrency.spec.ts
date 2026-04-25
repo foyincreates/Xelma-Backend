@@ -4,7 +4,7 @@ import predictionService from '../services/prediction.service';
 import sorobanService from '../services/soroban.service';
 import { toDecimal } from '../utils/decimal.util';
 
-const shouldRunDbTests = process.env.RUN_DB_TESTS === 'true' || process.env.CI === 'true';
+const shouldRunDbTests = process.env.RUN_DB_TESTS === 'true' || process.env.CI === 'true' || (global as any).hasDb;
 
 // Mock soroban service - we use jest.mock to replace the module with a mock object
 jest.mock('../services/soroban.service', () => {
@@ -24,6 +24,16 @@ describeDb('Prediction Service - Transactional & Concurrency Tests', () => {
     let testRound: any;
 
     beforeAll(async () => {
+        // Verify database connectivity before running tests
+        if (shouldRunDbTests) {
+            try {
+                await prisma.$queryRaw`SELECT 1`;
+            } catch (error) {
+                console.error('Database connectivity check failed:', error instanceof Error ? error.message : error);
+                throw new Error('Database unavailable for integration tests. Ensure DATABASE_URL is configured and database is running.');
+            }
+        }
+
         user = await prisma.user.create({
             data: {
                 walletAddress: 'G_CONCURRENCY_TEST_' + Math.random().toString(36).substring(7),

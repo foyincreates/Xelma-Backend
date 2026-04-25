@@ -25,3 +25,36 @@ global.hasDb = Boolean(
   process.env.DATABASE_URL !== DUMMY_DB_URL &&
   !process.env.DATABASE_URL.includes('test_pass@localhost')
 );
+
+/**
+ * Utility to skip DB-dependent tests if database is unavailable.
+ * Use in test suites that require a real database connection.
+ */
+global.describeIfDb = (name, fn) => {
+  const { describe } = require('@jest/globals');
+  if (global.hasDb || process.env.RUN_DB_TESTS === 'true' || process.env.CI === 'true') {
+    describe(name, fn);
+  } else {
+    describe.skip(`[DB SKIPPED] ${name}`, fn);
+  }
+};
+
+/**
+ * Helper to verify database connectivity.
+ * Returns true if database is available, false otherwise.
+ */
+global.checkDbConnectivity = async () => {
+  if (!global.hasDb) {
+    console.warn('DATABASE_URL not configured or is dummy URL. Database tests will be skipped.');
+    return false;
+  }
+  
+  try {
+    const { prisma } = require('./src/lib/prisma');
+    await prisma.$queryRaw`SELECT 1`;
+    return true;
+  } catch (error) {
+    console.error('Database connectivity check failed:', error.message);
+    return false;
+  }
+};

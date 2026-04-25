@@ -24,7 +24,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const shouldRunDbTests = process.env.RUN_DB_TESTS === 'true' || process.env.CI === 'true';
+const shouldRunDbTests = process.env.RUN_DB_TESTS === 'true' || process.env.CI === 'true' || (global as any).hasDb;
 const describeDb = shouldRunDbTests ? describe : describe.skip;
 
 describeDb('Auth Race Condition Prevention', () => {
@@ -34,6 +34,16 @@ describeDb('Auth Race Condition Prevention', () => {
 
     beforeAll(async () => {
         app = createApp();
+
+        // Verify database connectivity before running tests
+        if (shouldRunDbTests) {
+            try {
+                await prisma.$queryRaw`SELECT 1`;
+            } catch (error) {
+                console.error('Database connectivity check failed:', error instanceof Error ? error.message : error);
+                throw new Error('Database unavailable for integration tests. Ensure DATABASE_URL is configured and database is running.');
+            }
+        }
     });
 
     afterAll(async () => {

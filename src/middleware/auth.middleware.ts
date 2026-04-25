@@ -28,6 +28,7 @@ export const authenticateUser = async (
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
+  const requestId = (req as any).requestId;
   try {
     const authHeader = req.headers.authorization;
 
@@ -68,7 +69,7 @@ export const authenticateUser = async (
 
     next();
   } catch (error) {
-    logger.error("Authentication error:", error);
+    logger.error("Authentication error:", { error, requestId });
     res.status(401).json({ error: "Authentication failed" });
   }
 };
@@ -133,6 +134,7 @@ export const requireAdmin = async (
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
+  const requestId = (req as any).requestId;
   try {
     const authHeader = req.headers.authorization;
 
@@ -172,7 +174,7 @@ export const requireAdmin = async (
 
     next();
   } catch (error) {
-    logger.error("Admin authentication error:", error);
+    logger.error("Admin authentication error:", { error, requestId });
     res.status(401).json({ error: "Authentication failed" });
   }
 };
@@ -185,6 +187,7 @@ export const requireOracle = async (
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
+  const requestId = (req as any).requestId;
   try {
     const authHeader = req.headers.authorization;
 
@@ -224,7 +227,7 @@ export const requireOracle = async (
 
     next();
   } catch (error) {
-    logger.error("Oracle authentication error:", error);
+    logger.error("Oracle authentication error:", { error, requestId });
     res.status(401).json({ error: "Authentication failed" });
   }
 };

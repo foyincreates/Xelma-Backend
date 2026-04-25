@@ -67,11 +67,13 @@ export function errorHandler(
   }
 
   const isDev = process.env.NODE_ENV === 'development';
+  const requestId = (req as any).requestId;
 
   logger.error(`[${appError.code}] ${req.method} ${req.path} → ${appError.statusCode}`, {
     code: appError.code,
     statusCode: appError.statusCode,
     message: appError.message,
+    requestId,
     ...(appError.details && { details: appError.details }),
     ...(isDev && err instanceof Error && { stack: err.stack }),
   });

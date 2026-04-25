@@ -50,17 +50,3 @@ export function verifyToken(token: string): JwtPayload | null {
     return null;
   }
 }
-
-/**
- * Decode a JWT token without verification (use for debugging only)
- * @param token JWT token to decode
- * @returns Decoded payload or null if invalid
- */
-export function decodeToken(token: string): JwtPayload | null {
-  try {
-    const decoded = jwt.decode(token) as JwtPayload;
-    return decoded;
-  } catch (error) {
-    return null;
-  }
-}
